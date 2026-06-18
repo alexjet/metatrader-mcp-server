@@ -73,6 +73,12 @@ def get_candles_by_date(ctx: Context, symbol_name: str, timeframe: str, from_dat
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+def get_symbol_info(ctx: Context, symbol_name: str) -> dict:
+	"""Get detailed information for a trading symbol (contract size, pip value, digits, spread, volume limits, margin requirements, etc.)."""
+	client = get_client(ctx)
+	return client.market.get_symbol_info(symbol_name=symbol_name)
+
+@mcp.tool()
 def get_candles_latest(ctx: Context, symbol_name: str, timeframe: str, count: int = 100) -> str:
 	"""Get the latest N candles for a symbol and timeframe as CSV."""
 	client = get_client(ctx)

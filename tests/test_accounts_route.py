@@ -20,11 +20,11 @@ class DummyClient:
 def stub_lifespan(monkeypatch):
     # Stub out dotenv loading and MT5 client init
     monkeypatch.setattr(main_module, "load_dotenv", lambda: None)
-    monkeypatch.setattr(main_module, "init", lambda login, password, server: DummyClient())
+    monkeypatch.setattr(main_module, "init", lambda login, password, server, path=None: DummyClient())
     yield
 
 def test_account_info():
     with TestClient(app) as client:
-        response = client.get("/api/v1/accounts/info")
+        response = client.get("/api/v1/account/info")
     assert response.status_code == 200
     assert response.json() == {"balance": 1234.56, "equity": 1234.56, "profit": 0.0}

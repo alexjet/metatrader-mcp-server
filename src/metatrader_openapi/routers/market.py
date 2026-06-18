@@ -103,6 +103,8 @@ async def get_symbol_info_endpoint( # Choose a descriptive name like get_symbol_
         # If it's a simple class, you might need: info = info.__dict__ or vars(info)
         # For now, let's assume it's directly returnable or a Pydantic model.
         return info
+    except HTTPException:
+        raise
     except MT5ConnectionError as e:
         raise HTTPException(status_code=503, detail=str(e))
     # Specific exception for symbol not found if your client raises one

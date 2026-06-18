@@ -6,12 +6,14 @@ from fastapi.testclient import TestClient
 from metatrader_openapi.main import app
 import metatrader_openapi.main as main_module
 
-class DummyHistory:
-    def get_deals(self, from_date=None, to_date=None, group=None):
-        return [{"ticket": 1, "symbol": "EURUSD"}]
+import pandas as pd
 
-    def get_orders(self, from_date=None, to_date=None, group=None):
-        return [{"ticket": 2, "symbol": "USDJPY"}]
+class DummyHistory:
+    def get_deals_as_dataframe(self, from_date=None, to_date=None, group=None):
+        return pd.DataFrame([{"ticket": 1, "symbol": "EURUSD"}])
+
+    def get_orders_as_dataframe(self, from_date=None, to_date=None, group=None):
+        return pd.DataFrame([{"ticket": 2, "symbol": "USDJPY"}])
 
 class DummyClient:
     history = DummyHistory()
@@ -22,7 +24,7 @@ class DummyClient:
 def stub_lifespan(monkeypatch):
     # Stub dotenv and MT5 client init
     monkeypatch.setattr(main_module, "load_dotenv", lambda: None)
-    monkeypatch.setattr(main_module, "init", lambda login, password, server: DummyClient())
+    monkeypatch.setattr(main_module, "init", lambda login, password, server, path=None: DummyClient())
     yield
 
 
