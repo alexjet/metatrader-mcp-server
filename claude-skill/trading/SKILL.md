@@ -25,6 +25,7 @@ This is **financial software**. Every trade action involves real money. Be preci
 | Tool | Parameters | Returns |
 |------|-----------|---------|
 | `get_symbol_price` | `symbol_name: str` | dict: bid, ask, last, volume, time |
+| `get_symbol_info` | `symbol_name: str` | dict: contract size, pip value, digits, spread, volume limits, margin requirements, etc. |
 | `get_candles_latest` | `symbol_name: str`, `timeframe: str`, `count: int = 100` | CSV: time, open, high, low, close, tick_volume, spread, real_volume |
 | `get_all_symbols` | (none) | list of all symbol names |
 | `get_symbols` | `group: str` (e.g., `*USD*`) | list of filtered symbol names |
