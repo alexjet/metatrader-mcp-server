@@ -3,6 +3,18 @@ from typing import Any, Optional, Union
 from metatrader_client import client
 
 
+def env_flag(name: str, default: bool = False) -> bool:
+	"""Parse a boolean-ish environment variable.
+
+	Accepts 1/true/yes/on (case-insensitive) as True and 0/false/no/off as False.
+	Returns ``default`` when the variable is unset or empty.
+	"""
+	val = os.getenv(name)
+	if val is None or val.strip() == "":
+		return default
+	return val.strip().lower() in ("1", "true", "yes", "on")
+
+
 def resolve_transport_config(transport=None, host=None, port=None):
 	"""Resolve transport config: CLI flag > env var > default."""
 	transport = transport or os.getenv("MCP_TRANSPORT", "sse")
@@ -29,6 +41,7 @@ def init(
 	password: Optional[str],
 	server: Optional[str],
 	path: Optional[str] = None,
+	portable: bool = False,
 ) -> Optional[client.MT5Client]:
 	"""
 	Initialize MT5Client
@@ -38,6 +51,9 @@ def init(
 		password (Optional[str]): Password
 		server (Optional[str]): Server name
 		path (Optional[str]): Path to MT5 terminal executable (default: None for auto-detect)
+		portable (bool): Whether to launch/attach the MT5 terminal in portable mode
+			(default: False). Required when running multiple isolated terminals on the
+			same machine so each keeps its own data folder.
 
 	Returns:
 		Optional[client.MT5Client]: MT5Client instance if all parameters are provided, None otherwise
@@ -53,6 +69,10 @@ def init(
 		# Add path to config if provided
 		if path:
 			config["path"] = path
+
+		# Enable portable mode when requested
+		if portable:
+			config["portable"] = True
 
 		mt5_client = client.MT5Client(config=config)
 		mt5_client.connect()

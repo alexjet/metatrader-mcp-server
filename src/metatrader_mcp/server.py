@@ -10,7 +10,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Optional, Union
 
-from metatrader_mcp.utils import init, get_client
+from metatrader_mcp.utils import init, get_client, env_flag
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 1) Lifespan context definition
@@ -22,16 +22,22 @@ class AppContext:
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
 
+	# Load .env so credentials work even when the server is started directly
+	# (e.g. `mcp run`) without going through the CLI wrapper.
+	load_dotenv()
+	client = None
 	try:
 		client = init(
-			os.getenv("login"),
-			os.getenv("password"),
-			os.getenv("server"),
-			os.getenv("MT5_PATH")
+			os.getenv("LOGIN", os.getenv("login")),
+			os.getenv("PASSWORD", os.getenv("password")),
+			os.getenv("SERVER", os.getenv("server")),
+			os.getenv("MT5_PATH", os.getenv("mt5_path")),
+			env_flag("MT5_PORTABLE"),
 		)
 		yield AppContext(client=client)
 	finally:
-		client.disconnect()
+		if client is not None:
+			client.disconnect()
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 2) Instantiate FastMCP as `mcp` (must be named `mcp`, `server`, or `app`)
@@ -239,21 +245,24 @@ if __name__ == "__main__":
 	from metatrader_mcp.utils import resolve_transport_config, run_mcp
 
 	parser = argparse.ArgumentParser(description="MetaTrader MCP Server")
-	parser.add_argument("--login",    type=str, help="MT5 login")
-	parser.add_argument("--password", type=str, help="MT5 password")
-	parser.add_argument("--server",   type=str, help="MT5 server name")
-	parser.add_argument("--path",     type=str, help="Path to MT5 terminal executable (optional)")
+	parser.add_argument("--login",    type=str, help="MT5 login (env: LOGIN)")
+	parser.add_argument("--password", type=str, help="MT5 password (env: PASSWORD)")
+	parser.add_argument("--server",   type=str, help="MT5 server name (env: SERVER)")
+	parser.add_argument("--path",     type=str, help="Path to MT5 terminal executable (optional; env: MT5_PATH)")
+	parser.add_argument("--portable", dest="portable", action="store_true", default=None, help="Launch/attach the MT5 terminal in portable mode (env: MT5_PORTABLE)")
+	parser.add_argument("--no-portable", dest="portable", action="store_false", help="Disable portable mode")
 	parser.add_argument("--transport", type=str, choices=["sse", "stdio", "streamable-http"], default=None, help="MCP transport type (default: sse, env: MCP_TRANSPORT)")
 	parser.add_argument("--host",     type=str, default=None, help="Host to bind for SSE/HTTP transport (default: 0.0.0.0, env: MCP_HOST)")
 	parser.add_argument("--port",     type=int, default=None, help="Port to bind for SSE/HTTP transport (default: 8080, env: MCP_PORT)")
 
 	args = parser.parse_args()
 
-	# inject into lifespan via env vars
-	if args.login:    os.environ["login"]    = args.login
-	if args.password: os.environ["password"] = args.password
-	if args.server:   os.environ["server"]   = args.server
+	# inject into lifespan via env vars (uppercase as documented)
+	if args.login:    os.environ["LOGIN"]    = args.login
+	if args.password: os.environ["PASSWORD"] = args.password
+	if args.server:   os.environ["SERVER"]   = args.server
 	if args.path:     os.environ["MT5_PATH"] = args.path
+	if args.portable is not None: os.environ["MT5_PORTABLE"] = "true" if args.portable else "false"
 
 	transport, host, port = resolve_transport_config(args.transport, args.host, args.port)
 

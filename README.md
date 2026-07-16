@@ -170,6 +170,35 @@ If your MT5 terminal is installed in a non-standard location, add the `--path` a
 }
 ```
 
+**Optional: Run Multiple Accounts on One Machine (Portable Mode)**
+
+A single MT5 terminal can only be logged into one account at a time, so running
+two servers against the same terminal makes them share that one account. To drive
+two different accounts, install a second MT5 terminal in its own folder, launch it
+in portable mode, and point a second server at it with `--path` and `--portable`:
+
+```json
+{
+  "mcpServers": {
+    "metatrader-b": {
+      "command": "metatrader-mcp-server",
+      "args": [
+        "--login",     "SECOND_ACCOUNT_LOGIN",
+        "--password",  "SECOND_ACCOUNT_PASSWORD",
+        "--server",    "SECOND_ACCOUNT_SERVER",
+        "--path",      "C:\\MT5-B\\terminal64.exe",
+        "--portable",
+        "--port",      "8081"
+      ]
+    }
+  }
+}
+```
+
+Credentials and options can also be provided via a `.env` file using the documented
+uppercase variables (`LOGIN`, `PASSWORD`, `SERVER`, `MT5_PATH`, `MT5_PORTABLE`); CLI
+arguments take precedence over `.env` values.
+
 3. Replace `YOUR_MT5_LOGIN`, `YOUR_MT5_PASSWORD`, and `YOUR_MT5_SERVER` with your actual credentials
 
 4. Restart Claude Desktop
