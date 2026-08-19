@@ -50,8 +50,8 @@ This is **financial software**. Every trade action involves real money. Be preci
 
 | Tool | Parameters | Returns |
 |------|-----------|---------|
-| `place_market_order` | `symbol: str`, `volume: float`, `type: str` (BUY/SELL) | dict: error, message, data (TradeResult) |
-| `place_pending_order` | `symbol: str`, `volume: float`, `type: str`, `price: float`, `stop_loss: float = 0.0`, `take_profit: float = 0.0` | dict: error, message, data |
+| `place_market_order` | `symbol: str`, `volume: float`, `type: str` (BUY/SELL), `stop_loss: float = 0.0`, `take_profit: float = 0.0`, `comment: str = ""` | dict: error, message, data (TradeResult) |
+| `place_pending_order` | `symbol: str`, `volume: float`, `type: str`, `price: float`, `stop_loss: float = 0.0`, `take_profit: float = 0.0`, `comment: str = ""` | dict: error, message, data |
 
 ### Modification
 
@@ -100,11 +100,29 @@ Present as a unified dashboard.
 
 ### Market Order with SL/TP
 
-The `place_market_order` tool does NOT accept SL/TP parameters. Use this two-step workflow:
+`place_market_order` accepts `stop_loss` and `take_profit` directly, so the
+normal path is a single call.
+
+Some brokers reject SL/TP on the initial market request depending on the
+symbol's execution mode. If the call comes back with an error naming invalid
+stops, fall back to the two-step workflow:
 
 1. Call `place_market_order` with symbol, volume, type
 2. Extract the position ID from the trade result (`data.order` or `data.deal`)
 3. Call `modify_position` with the position ID to set SL/TP
+
+### Order Comments
+
+Both `place_market_order` and `place_pending_order` accept `comment`, which
+appears in the terminal's Comment column and in the broker's history. It
+defaults to `MCP` when omitted.
+
+Use it to tag the origin of a trade so it can be identified later. Constraints:
+
+- MetaTrader 5 truncates the comment at 31 characters.
+- Some brokers overwrite or blank it — partial fills and broker-side SL/TP
+  executions commonly replace it. Treat it as best-effort provenance, not a
+  reliable key. Keep recording ticket IDs separately.
 
 ### Pending Order
 

@@ -137,6 +137,7 @@ async def place_market(
     type: str = Body(..., description="Order type, 'BUY' or 'SELL'"),
     stop_loss: Optional[float] = Body(0.0, description="Stop loss price"),
     take_profit: Optional[float] = Body(0.0, description="Take profit price"),
+    comment: Optional[str] = Body("", description="Order comment (defaults to 'MCP', max 31 chars)"),
 ):
     """Places a market order (BUY or SELL) for a specified financial instrument.
 
@@ -146,13 +147,14 @@ async def place_market(
         type (str): Order type, 'BUY' or 'SELL'.
         stop_loss (Optional[float]): Stop loss price.
         take_profit (Optional[float]): Take profit price.
+        comment (Optional[str]): Order comment. Defaults to "MCP" when empty.
 
     Response:
         Dict[str, Any]: Placed order data.
     """
     client = request.app.state.client
     try:
-        return client.order.place_market_order(symbol=symbol, volume=volume, type=type, stop_loss=stop_loss, take_profit=take_profit)
+        return client.order.place_market_order(symbol=symbol, volume=volume, type=type, stop_loss=stop_loss, take_profit=take_profit, comment=comment)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -165,6 +167,7 @@ async def place_pending(
     price: float = Body(..., description="Pending order price"),
     stop_loss: Optional[float] = Body(0.0, description="Stop loss price"),
     take_profit: Optional[float] = Body(0.0, description="Take profit price"),
+    comment: Optional[str] = Body("", description="Order comment (defaults to 'MCP', max 31 chars)"),
 ):
     """Place a pending order.
 
@@ -175,12 +178,13 @@ async def place_pending(
         price (float): Pending order price.
         stop_loss (Optional[float]): Stop loss price.
         take_profit (Optional[float]): Take profit price.
+        comment (Optional[str]): Order comment. Defaults to "MCP" when empty.
 
     Response:
         Dict[str, Any]: Placed pending order data.
     """
     client = request.app.state.client
     try:
-        return client.order.place_pending_order(symbol=symbol, volume=volume, type=type, price=price, stop_loss=stop_loss, take_profit=take_profit)
+        return client.order.place_pending_order(symbol=symbol, volume=volume, type=type, price=price, stop_loss=stop_loss, take_profit=take_profit, comment=comment)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -12,6 +12,7 @@ def place_pending_order(
 	price: Union[float, int],
 	stop_loss: Optional[Union[float, int]] = 0.0,
 	take_profit: Optional[Union[float, int]] = 0.0,
+	comment: Optional[str] = "",
 ):
 	"""
 	Places a pending order on the MetaTrader 5 platform.
@@ -30,6 +31,8 @@ def place_pending_order(
 		price: The price at which to place the pending order.
 		stop_loss: Optional stop loss level.
 		take_profit: Optional take profit level.
+		comment: Optional order comment. Defaults to "MCP" when empty. MetaTrader 5
+			truncates comments at 31 characters and some brokers overwrite them.
 
 	Returns:
 		A dictionary with the result of the order placement. If successful,
@@ -61,6 +64,7 @@ def place_pending_order(
 		price = float(price),
 		stop_loss = float(stop_loss),
 		take_profit = float(take_profit),
+		comment = comment,
 	)
 
 	if response["success"] is False:

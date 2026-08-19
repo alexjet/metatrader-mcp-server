@@ -2,7 +2,7 @@ from typing import Union, Optional
 from ..types import TradeRequestActions
 from .send_order import send_order
 
-def place_market_order(connection, *, type: str, symbol: str, volume: Union[float, int], stop_loss: Optional[float] = 0.0, take_profit: Optional[float] = 0.0):
+def place_market_order(connection, *, type: str, symbol: str, volume: Union[float, int], stop_loss: Optional[float] = 0.0, take_profit: Optional[float] = 0.0, comment: Optional[str] = ""):
     """
     Places a market order for a specified financial instrument.
 
@@ -14,6 +14,10 @@ def place_market_order(connection, *, type: str, symbol: str, volume: Union[floa
         type: The type of market order, either "BUY" or "SELL".
         symbol: The trading instrument symbol (e.g., "EURUSD").
         volume: The volume of the trade operation in lots.
+        stop_loss: Optional stop loss price.
+        take_profit: Optional take profit price.
+        comment: Optional order comment. Defaults to "MCP" when empty. MetaTrader 5
+                 truncates comments at 31 characters and some brokers overwrite them.
 
     Returns:
         dict: A dictionary containing the result of the order operation. Includes an error flag,
@@ -33,6 +37,7 @@ def place_market_order(connection, *, type: str, symbol: str, volume: Union[floa
         volume=volume,
         stop_loss=stop_loss,
         take_profit=take_profit,
+        comment=comment,
     )
 
     if response["success"] is False:

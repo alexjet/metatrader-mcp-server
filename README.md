@@ -510,7 +510,8 @@ result = client.order.place_market_order(
     symbol="EURUSD",
     volume=0.01,
     stop_loss=1.0990,
-    take_profit=1.1010
+    take_profit=1.1010,
+    comment="my-strategy-01"   # optional, defaults to "MCP", max 31 chars
 )
 print(result['message'])
 
@@ -536,8 +537,8 @@ client.disconnect()
 - `get_symbol_info` - Get detailed symbol information
 
 ### Order Execution
-- `place_market_order` - Execute instant BUY/SELL orders
-- `place_pending_order` - Place limit/stop orders for future execution
+- `place_market_order` - Execute instant BUY/SELL orders (optional SL/TP and comment)
+- `place_pending_order` - Place limit/stop orders for future execution (optional SL/TP and comment)
 - `modify_position` - Update stop loss or take profit
 - `modify_pending_order` - Modify pending order parameters
 

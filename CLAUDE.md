@@ -26,7 +26,7 @@ metatrader_client/
 
 **Pattern**: Functions receive `connection` as first param, use keyword-only args (`*,`)
 ```python
-def place_market_order(connection, *, type: str, symbol: str, volume: Union[float, int]):
+def place_market_order(connection, *, type: str, symbol: str, volume: Union[float, int], stop_loss: Optional[float] = 0.0, take_profit: Optional[float] = 0.0, comment: Optional[str] = ""):
 ```
 
 ### 2. `metatrader_mcp` - MCP Server
