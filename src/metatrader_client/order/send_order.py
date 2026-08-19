@@ -126,6 +126,24 @@ def send_order(
 	if not isinstance(price, float):
 		return { "success": False, "message": "Invalid price" }
 
+	# Market orders carry no caller-supplied price, so resolve the current
+	# execution price BEFORE validating SL/TP. Otherwise the comparisons below
+	# run against 0.0, which rejects every valid stop loss on a BUY and every
+	# valid take profit on a SELL, while waving through nonsensical values in
+	# the opposite direction. The DEAL branch re-checks price == 0 further down
+	# and is left in place as a safety net.
+	if (
+		action == TradeRequestActions.DEAL
+		and price == 0
+		and symbol is not None
+		and order_type in [OrderType.BUY, OrderType.SELL]
+	):
+		tick = mt5.symbol_info_tick(symbol)
+		if tick is None:
+			return { "success": False, "message": f"Failed to get tick for {symbol}", "data": None }
+		price = tick.ask if order_type == OrderType.BUY else tick.bid
+		price = round(price, symbol_info.digits)
+
 	# Validate TP and SL
 	if stop_loss != 0:
 		stop_loss = float(stop_loss)
