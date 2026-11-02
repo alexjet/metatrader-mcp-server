@@ -1,6 +1,11 @@
 # Bridge reliability rework for long-lived (Kiro) clients
 
-Status: **items 1–4 implemented on `feature/kiro-reliability-rework`, not deployed** (2026-11-02).
+Status: **items 1–4 implemented on `feature/kiro-reliability-rework`; live on 8080 (terminal #1,
+demo) since 2026-11-02, 8081/8082 not yet** (2026-11-02).
+
+§6 step 2 on 8080 (`scripts/box/probe_bridge.py`, read-only): B on `/sse` stayed `OK` through
+10 A sessions alternating `/sse` and `/mcp`; `/sse` and `/mcp` list the same 26 tools. The
+terminal-restart case (acceptance criterion 3) is covered by unit tests only, not yet live.
 Branched from `feature/expose-get-symbol-info` (carries portable mode, which the box needs).
 
 Findings while implementing:
