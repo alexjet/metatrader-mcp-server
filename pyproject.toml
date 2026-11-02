@@ -27,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
   "python-dotenv>=1.1.0",
-  "MetaTrader5>=5.0.45",
+  "MetaTrader5>=5.0.45; sys_platform == 'win32'",
   "numpy>=2.2.4",
   "pandas>=2.2.3",
   "tabulate>=0.9.0",
@@ -38,7 +38,9 @@ dependencies = [
   "uvicorn[standard]>=0.34.1",
   "pydantic>=2.11.3",
   "pydantic-settings>=2.8.1",
-  "mcp[cli]>=1.6.0",
+  # The box runs 1.28.1 (demo, prod folders) and 1.29.0 (seagull); tests pass on 1.28.1-1.30.0.
+  # mcp 2.x renamed FastMCP and breaks this server; /mcp alongside /sse needs >=1.8.
+  "mcp[cli]>=1.28.1,<1.31",
   "click>=8.0.0",
   "pytz",
   "websockets>=13.0",

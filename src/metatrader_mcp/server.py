@@ -10,34 +10,26 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Optional, Union
 
-from metatrader_mcp.utils import init, get_client, env_flag
+from metatrader_mcp.utils import get_client, get_shared_client, mt5_tool
+from metatrader_client.client import MT5Client
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 1) Lifespan context definition
 # ────────────────────────────────────────────────────────────────────────────────
 @dataclass
 class AppContext:
-	client: str
+	client: Optional[MT5Client]
 
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
+	# The SDK enters this once PER SESSION. It hands out the process-wide client and
+	# must NOT disconnect on exit: mt5.shutdown() drops the single per-process IPC
+	# link for every other open session. Shutdown happens at process exit only.
 
 	# Load .env so credentials work even when the server is started directly
 	# (e.g. `mcp run`) without going through the CLI wrapper.
 	load_dotenv()
-	client = None
-	try:
-		client = init(
-			os.getenv("LOGIN", os.getenv("login")),
-			os.getenv("PASSWORD", os.getenv("password")),
-			os.getenv("SERVER", os.getenv("server")),
-			os.getenv("MT5_PATH", os.getenv("mt5_path")),
-			env_flag("MT5_PORTABLE"),
-		)
-		yield AppContext(client=client)
-	finally:
-		if client is not None:
-			client.disconnect()
+	yield AppContext(client=get_shared_client())
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 2) Instantiate FastMCP as `mcp` (must be named `mcp`, `server`, or `app`)
@@ -53,12 +45,14 @@ mcp = FastMCP(
 # ────────────────────────────────────────────────────────────────────────────────
 
 @mcp.tool()
+@mt5_tool
 def get_account_info(ctx: Context) -> dict:
 	"""Get account information (balance, equity, profit, margin level, free margin, account type, leverage, currency)."""
 	client = get_client(ctx)
 	return client.account.get_trade_statistics()
 
 @mcp.tool()
+@mt5_tool
 def get_deals(ctx: Context, from_date: Optional[str] = None, to_date: Optional[str] = None, symbol: Optional[str] = None) -> str:
 	"""Get historical deals as CSV. Date input in format: 'YYYY-MM-DD'."""
 	client = get_client(ctx)
@@ -66,6 +60,7 @@ def get_deals(ctx: Context, from_date: Optional[str] = None, to_date: Optional[s
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def get_orders(ctx: Context, from_date: Optional[str] = None, to_date: Optional[str] = None, symbol: Optional[str] = None) -> str:
 	"""Get historical orders as CSV. Date input in format: 'YYYY-MM-DD'"""
 	client = get_client(ctx)
@@ -79,12 +74,14 @@ def get_candles_by_date(ctx: Context, symbol_name: str, timeframe: str, from_dat
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def get_symbol_info(ctx: Context, symbol_name: str) -> dict:
 	"""Get detailed information for a trading symbol (contract size, pip value, digits, spread, volume limits, margin requirements, etc.)."""
 	client = get_client(ctx)
 	return client.market.get_symbol_info(symbol_name=symbol_name)
 
 @mcp.tool()
+@mt5_tool
 def get_candles_latest(ctx: Context, symbol_name: str, timeframe: str, count: int = 100) -> str:
 	"""Get the latest N candles for a symbol and timeframe as CSV."""
 	client = get_client(ctx)
@@ -92,18 +89,21 @@ def get_candles_latest(ctx: Context, symbol_name: str, timeframe: str, count: in
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def get_symbol_price(ctx: Context, symbol_name: str) -> dict:
 	"""Get the latest price info for a symbol as a dictionary."""
 	client = get_client(ctx)
 	return client.market.get_symbol_price(symbol_name=symbol_name)
 
 @mcp.tool()
+@mt5_tool
 def get_all_symbols(ctx: Context) -> list:
 	"""Get a list of all available market symbols."""
 	client = get_client(ctx)
 	return client.market.get_symbols()
 
 @mcp.tool()
+@mt5_tool
 def get_symbols(ctx: Context, group: Optional[str] = None) -> list:
 	"""
 	Get a list of available market symbols. Filter symbols by group pattern (e.g., '*USD*').
@@ -116,6 +116,7 @@ def get_symbols(ctx: Context, group: Optional[str] = None) -> list:
 # ────────────────────────────────────────────────────────────────────────────────
 
 @mcp.tool()
+@mt5_tool
 def get_all_positions(ctx: Context) -> list:
 	"""Get all open positions."""
 	client = get_client(ctx)
@@ -123,6 +124,7 @@ def get_all_positions(ctx: Context) -> list:
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def get_positions_by_symbol(ctx: Context, symbol: str) -> list:
 	"""Get open positions for a specific symbol."""
 	client = get_client(ctx)
@@ -130,6 +132,7 @@ def get_positions_by_symbol(ctx: Context, symbol: str) -> list:
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def get_positions_by_id(ctx: Context, id: Union[int, str]) -> list:
 	"""Get open positions by ID."""
 	client = get_client(ctx)
@@ -137,6 +140,7 @@ def get_positions_by_id(ctx: Context, id: Union[int, str]) -> list:
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def get_all_pending_orders(ctx: Context) -> list:
 	"""Get all pending orders."""
 	client = get_client(ctx)
@@ -144,6 +148,7 @@ def get_all_pending_orders(ctx: Context) -> list:
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def get_pending_orders_by_symbol(ctx: Context, symbol: str) -> list:
 	"""Get pending orders for a specific symbol."""
 	client = get_client(ctx)
@@ -151,6 +156,7 @@ def get_pending_orders_by_symbol(ctx: Context, symbol: str) -> list:
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def get_pending_orders_by_id(ctx: Context, id: Union[int, str]) -> list:
 	"""Get pending orders by id."""
 	client = get_client(ctx)
@@ -158,6 +164,7 @@ def get_pending_orders_by_id(ctx: Context, id: Union[int, str]) -> list:
 	return df.to_csv() if hasattr(df, 'to_csv') else str(df)
 
 @mcp.tool()
+@mt5_tool
 def place_market_order(ctx: Context, symbol: str, volume: float, type: str, stop_loss: Optional[Union[int, float]] = 0.0, take_profit: Optional[Union[int, float]] = 0.0, comment: Optional[str] = "") -> dict:
 	"""
 	Place a market order. Parameters:
@@ -173,6 +180,7 @@ def place_market_order(ctx: Context, symbol: str, volume: float, type: str, stop
 	return client.order.place_market_order(symbol=symbol, volume=volume, type=type, stop_loss=stop_loss, take_profit=take_profit, comment=comment)
 
 @mcp.tool()
+@mt5_tool
 def place_pending_order(ctx: Context, symbol: str, volume: float, type: str, price: float, stop_loss: Optional[Union[int, float]] = 0.0, take_profit: Optional[Union[int, float]] = 0.0, comment: Optional[str] = "") -> dict:
 	"""
 	Place a pending order. Parameters:
@@ -189,58 +197,68 @@ def place_pending_order(ctx: Context, symbol: str, volume: float, type: str, pri
 	return client.order.place_pending_order(symbol=symbol, volume=volume, type=type, price=price, stop_loss=stop_loss, take_profit=take_profit, comment=comment)
 
 @mcp.tool()
+@mt5_tool
 def modify_position(ctx: Context, id: Union[int, str], stop_loss: Optional[Union[int, float]] = None, take_profit: Optional[Union[int, float]] = None) -> dict:
 	"""Modify an open position by ID."""
 	client = get_client(ctx)
 	return client.order.modify_position(id=id, stop_loss=stop_loss, take_profit=take_profit)
 @mcp.tool()
+@mt5_tool
 def modify_pending_order(ctx: Context, id: Union[int, str], price: Optional[Union[int, float]] = None, stop_loss: Optional[Union[int, float]] = None, take_profit: Optional[Union[int, float]] = None) -> dict:
 	"""Modify a pending order by ID."""
 	client = get_client(ctx)
 	return client.order.modify_pending_order(id=id, price=price, stop_loss=stop_loss, take_profit=take_profit)
 @mcp.tool()
+@mt5_tool
 def close_position(ctx: Context, id: Union[int, str]) -> dict:
 	"""Close an open position by ID."""
 	client = get_client(ctx)
 	return client.order.close_position(id=id)
 
 @mcp.tool()
+@mt5_tool
 def cancel_pending_order(ctx: Context, id: Union[int, str]) -> dict:
 	"""Cancel a pending order by ID."""
 	client = get_client(ctx)
 	return client.order.cancel_pending_order(id=id)
 
 @mcp.tool()
+@mt5_tool
 def close_all_positions(ctx: Context) -> dict:
 	"""Close all open positions."""
 	client = get_client(ctx)
 	return client.order.close_all_positions()
 
 @mcp.tool()
+@mt5_tool
 def close_all_positions_by_symbol(ctx: Context, symbol: str) -> dict:
 	"""Close all open positions for a specific symbol."""
 	client = get_client(ctx)
 	return client.order.close_all_positions_by_symbol(symbol=symbol)
 
 @mcp.tool()
+@mt5_tool
 def close_all_profitable_positions(ctx: Context) -> dict:
 	"""Close all profitable positions."""
 	client = get_client(ctx)
 	return client.order.close_all_profitable_positions()
 
 @mcp.tool()
+@mt5_tool
 def close_all_losing_positions(ctx: Context) -> dict:
 	"""Close all losing positions."""
 	client = get_client(ctx)
 	return client.order.close_all_losing_positions()
 
 @mcp.tool()
+@mt5_tool
 def cancel_all_pending_orders(ctx: Context) -> dict:
 	"""Cancel all pending orders."""
 	client = get_client(ctx)
 	return client.order.cancel_all_pending_orders()
 
 @mcp.tool()
+@mt5_tool
 def cancel_pending_orders_by_symbol(ctx: Context, symbol: str) -> dict:
 	"""Cancel all pending orders for a specific symbol."""
 	client = get_client(ctx)
