@@ -44,7 +44,9 @@ async def main(base: str, cycles: int) -> int:
 			code = (await h.post(f"{base}/mcp", json={}, timeout=5,
 				headers={"Accept": "application/json, text/event-stream"})).status_code
 		except httpx.HTTPError as e:
-			code = f"error {e}"
+			print(f"bridge unreachable at {base}: {e!r}")
+			print("RESULT: UNREACHABLE (tunnel down or bridge not listening)")
+			return 1
 	has_mcp = code != 404
 	print(f"/mcp: HTTP {code} -> {'present' if has_mcp else 'absent'}")
 
