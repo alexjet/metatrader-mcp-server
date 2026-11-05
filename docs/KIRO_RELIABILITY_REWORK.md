@@ -1,7 +1,11 @@
 # Bridge reliability rework for long-lived (Kiro) clients
 
 Status: **items 1–4 implemented on `feature/kiro-reliability-rework`; live on 8080 (terminal #1,
-demo) since 2026-11-02, 8081/8082 not yet** (2026-11-02).
+demo) since 2026-11-02 and on 8082 (seagull, live) since 2026-11-05, 8081 not yet.**
+
+8082 on 2026-11-05: venv aligned to demo's `pip freeze`, code deployed, `probe_bridge.py`
+PASS (B survived 10 A sessions over `/sse` and `/mcp`; 26 tools on both). 8081 `/mcp` still
+404 (old code).
 
 §6 step 2 on 8080 (`scripts/box/probe_bridge.py`, read-only): B on `/sse` stayed `OK` through
 10 A sessions alternating `/sse` and `/mcp`; `/sse` and `/mcp` list the same 26 tools. The
